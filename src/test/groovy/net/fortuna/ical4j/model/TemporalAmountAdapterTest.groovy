@@ -99,9 +99,16 @@ class TemporalAmountAdapterTest extends Specification {
         expect: 'derived end time value equals expected'
         TemporalAmountAdapter.from(new Dur(duration)).getTime(new DateTime(start)) == new DateTime(expectedEnd)
 
+		/*
+		 *  Changed to use UTC date-time values in ical4j-byeaster. The test case was failing without it.
+		 *  Prabably has to do with the platform default timezone.
+		 *  
+		 *  I can't be sure of the original intentions, so expect this change to increase the likelihood of bugs slipping by.
+		 */  
+		
         where:
         duration	| start				| expectedEnd
-        'P1D' | '20110326T110000' | '20110327T110000'
+        'P1D' | '20110326T110000Z' | '20110327T110000Z'
     }
 
     @Unroll
