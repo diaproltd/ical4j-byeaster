@@ -1,0 +1,7 @@
+ical4j-byeaster
+Copyright 2022 Diapro Ltd.
+
+The Initial Developer of the code used in src/main/java/hu/diapro/ical4j/EasterHelper.java,
+taken from jollyday (https://github.com/svendiedrichsen/jollyday/),
+is Sven Diedrichsen (https://github.com/svendiedrichsen).
+Copyright 2010-2013, 2015 Sven Diedrichsen.

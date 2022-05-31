@@ -245,6 +245,27 @@ class RecurSpec extends Specification {
         '2,-1'     | '20110201' | '20121231' || ['20110202', '20110228', '20120202', '20120229']
     }
 
+	@Unroll
+	def 'verify byeaster recurrence rules: #rule'() {
+		setup: 'parse recurrence rule'
+		def recur = new Recur("FREQ=YEARLY;BYEASTER=$rule")
+		def startDate = new Date(start)
+		def endDate = new Date(end)
+		def expectedDates = []
+		expected.each {
+			expectedDates << new Date(it)
+		}
+
+		expect:
+		recur.getDates(startDate, endDate, Value.DATE) == expectedDates
+
+		where:
+		rule			| start			| end			|| expected
+		'0'				| '20200101'	| '20291231'	|| ['20200412', '20210404', '20220417', '20230409', '20240331', '20250420', '20260405', '20270328', '20280416', '20290401']
+		'7,14,21'		| '20200101'	| '20211231'	|| ['20200419', '20200426', '20200503', '20210411', '20210418', '20210425']
+		'-46,-7'		| '20200101'	| '20211231'	|| ['20200226', '20200405', '20210217', '20210328']
+	}
+	
     @Unroll
     def 'verify byyearday recurrence rules: #rule'() {
         setup: 'parse recurrence rule'
@@ -431,6 +452,7 @@ class RecurSpec extends Specification {
         'RSCALE=ETHIOPIC;FREQ=MONTHLY;BYMONTH=13'	                        | 'RSCALE=ETHIOPIC;FREQ=MONTHLY;BYMONTH=13'
         'RSCALE=HEBREW;FREQ=YEARLY;BYMONTH=5L;BYMONTHDAY=8;SKIP=FORWARD'	| 'RSCALE=HEBREW;FREQ=YEARLY;BYMONTH=5L;BYMONTHDAY=8;SKIP=FORWARD'
         'RSCALE=GREGORIAN;FREQ=YEARLY;SKIP=FORWARD'	                        | 'RSCALE=GREGORIAN;FREQ=YEARLY;SKIP=FORWARD'
+		'FREQ=YEARLY;BYEASTER=-7,0,7'				                    	| 'FREQ=YEARLY;BYEASTER=-7,0,7'
     }
 
     def 'test recur rule builder'() {

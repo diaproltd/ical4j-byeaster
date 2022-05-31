@@ -40,11 +40,15 @@ import net.fortuna.ical4j.util.Dates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import hu.diapro.ical4j.EasterHelper;
+import hu.diapro.ical4j.transform.recurrence.ByEasterRule;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ValueRange;
 import java.util.Calendar;
 import java.util.*;
 
@@ -77,9 +81,9 @@ public class Recur implements Serializable {
     private static final String BYDAY = "BYDAY";
 
     private static final String BYMONTHDAY = "BYMONTHDAY";
-
+    
     private static final String BYYEARDAY = "BYYEARDAY";
-
+    
     private static final String BYWEEKNO = "BYWEEKNO";
 
     private static final String BYMONTH = "BYMONTH";
@@ -91,6 +95,8 @@ public class Recur implements Serializable {
     private static final String RSCALE = "RSCALE";
 
     private static final String SKIP = "SKIP";
+    
+    private static final String BYEASTER = "BYEASTER";
 
     public enum Frequency {
         SECONDLY, MINUTELY, HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
@@ -218,6 +224,8 @@ public class Recur implements Serializable {
     private MonthList monthList;
 
     private NumberList setPosList;
+    
+    private NumberList easterDayList;
 
     private Map<String, Transformer<DateList>> transformers;
 
@@ -294,6 +302,8 @@ public class Recur implements Serializable {
                 dayList = new WeekDayList(nextToken(tokens, token));
             } else if (BYMONTHDAY.equals(token)) {
                 monthDayList = new NumberList(nextToken(tokens, token), chronology.range(ChronoField.DAY_OF_MONTH), true);
+            } else if (BYEASTER.equals(token)) {
+            	easterDayList = new NumberList(nextToken(tokens, token), EasterHelper.validEasterDayValues(), true);
             } else if (BYYEARDAY.equals(token)) {
                 yearDayList = new NumberList(nextToken(tokens, token), chronology.range(ChronoField.DAY_OF_YEAR), true);
             } else if (BYWEEKNO.equals(token)) {
@@ -394,6 +404,11 @@ public class Recur implements Serializable {
             transformers.put(BYMONTHDAY, new ByMonthDayRule(monthDayList, frequency, Optional.ofNullable(weekStartDay), skip));
         } else {
             monthDayList = new NumberList(chronology.range(ChronoField.DAY_OF_MONTH), true);
+        }
+        if (easterDayList != null) {
+        	transformers.put(BYEASTER, new ByEasterRule(easterDayList, frequency, Optional.ofNullable(weekStartDay)));
+        } else {
+        	easterDayList = new NumberList(chronology.range(ChronoField.DAY_OF_YEAR), true);
         }
         if (yearDayList != null) {
             transformers.put(BYYEARDAY, new ByYearDayRule(yearDayList, frequency, Optional.ofNullable(weekStartDay)));
@@ -514,6 +529,16 @@ public class Recur implements Serializable {
     public final NumberList getWeekNoList() {
         return weekNoList;
     }
+    
+    /**
+     * Accessor for the configured BYEASTER list.
+     * NOTE: Any changes to the returned list will have no effect on the recurrence rule processing.
+     * 
+     * @return Returns the easterDayList.
+     */
+    public final NumberList getEasterDayList() {
+		return easterDayList;
+	}
 
     /**
      * Accessor for the configured BYYEARDAY list.
@@ -638,6 +663,12 @@ public class Recur implements Serializable {
             b.append(BYWEEKNO);
             b.append('=');
             b.append(weekNoList);
+        }
+        if (!easterDayList.isEmpty()) {
+        	b.append(';');
+            b.append(BYEASTER);
+            b.append('=');
+            b.append(easterDayList);
         }
         if (!yearDayList.isEmpty()) {
             b.append(';');
@@ -972,6 +1003,14 @@ public class Recur implements Serializable {
             }
         }
 
+        if (transformers.get(BYEASTER) != null) {
+        	dates = transformers.get(BYEASTER).transform(dates);
+        	// debugging..
+            if (log.isDebugEnabled()) {
+                log.debug("Dates after BYEASTER processing: " + dates);
+            }
+        }
+        
         if (transformers.get(BYYEARDAY) != null) {
             dates = transformers.get(BYYEARDAY).transform(dates);
             // debugging..
@@ -987,7 +1026,8 @@ public class Recur implements Serializable {
                 log.debug("Dates after BYMONTHDAY processing: " + dates);
             }
         } else if ((frequency == Frequency.MONTHLY && dayList.isEmpty()) ||
-                (frequency == Frequency.YEARLY && yearDayList.isEmpty() && weekNoList.isEmpty() && dayList.isEmpty())) {
+                (frequency == Frequency.YEARLY && yearDayList.isEmpty() && weekNoList.isEmpty() && dayList.isEmpty()
+                && easterDayList.isEmpty())) {
 
             NumberList implicitMonthDayList = new NumberList();
             implicitMonthDayList.add(rootSeed.get(Calendar.DAY_OF_MONTH));
@@ -1002,7 +1042,7 @@ public class Recur implements Serializable {
                 log.debug("Dates after BYDAY processing: " + dates);
             }
         } else if (frequency == Frequency.WEEKLY || (frequency == Frequency.YEARLY && yearDayList.isEmpty()
-                && !weekNoList.isEmpty() && monthDayList.isEmpty())) {
+                && !weekNoList.isEmpty() && monthDayList.isEmpty() && easterDayList.isEmpty())) {
 
             ByDayRule implicitRule = new ByDayRule(new WeekDayList(WeekDay.getWeekDay(rootSeed)),
                     deriveFilterType(),  Optional.ofNullable(weekStartDay));
@@ -1145,13 +1185,14 @@ public class Recur implements Serializable {
                 Objects.equals(hourList, recur.hourList) && Objects.equals(dayList, recur.dayList) &&
                 Objects.equals(monthDayList, recur.monthDayList) && Objects.equals(yearDayList, recur.yearDayList) &&
                 Objects.equals(weekNoList, recur.weekNoList) && Objects.equals(monthList, recur.monthList) &&
-                Objects.equals(setPosList, recur.setPosList) && weekStartDay == recur.weekStartDay;
+                Objects.equals(setPosList, recur.setPosList) && weekStartDay == recur.weekStartDay &&
+                Objects.equals(easterDayList, recur.easterDayList);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(frequency, skip, until, rscale, count, interval, secondList, minuteList, hourList, dayList,
-                monthDayList, yearDayList, weekNoList, monthList, setPosList, weekStartDay);
+                monthDayList, easterDayList, yearDayList, weekNoList, monthList, setPosList, weekStartDay);
     }
 
     /**
@@ -1180,6 +1221,8 @@ public class Recur implements Serializable {
         private WeekDayList dayList;
 
         private NumberList monthDayList;
+        
+        private NumberList easterDayList;
 
         private NumberList yearDayList;
 
@@ -1206,6 +1249,7 @@ public class Recur implements Serializable {
             this.hourList = recur.hourList;
             this.dayList = recur.dayList;
             this.monthDayList = recur.monthDayList;
+            this.easterDayList = recur.easterDayList;
             this.yearDayList = recur.yearDayList;
             this.weekNoList = recur.weekNoList;
             this.monthList = recur.monthList;
@@ -1267,6 +1311,11 @@ public class Recur implements Serializable {
             this.monthDayList = monthDayList;
             return this;
         }
+        
+        public Builder easterDayList(NumberList easterDayList) {
+        	this.easterDayList = easterDayList;
+        	return this;
+        }
 
         public Builder yearDayList(NumberList yearDayList) {
             this.yearDayList = yearDayList;
@@ -1306,6 +1355,7 @@ public class Recur implements Serializable {
             recur.hourList = hourList;
             recur.dayList = dayList;
             recur.monthDayList = monthDayList;
+            recur.easterDayList = easterDayList;
             recur.yearDayList = yearDayList;
             recur.weekNoList = weekNoList;
             recur.monthList = monthList;
