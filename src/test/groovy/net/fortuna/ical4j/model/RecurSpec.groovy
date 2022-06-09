@@ -265,7 +265,27 @@ class RecurSpec extends Specification {
 		'7,14,21'		| '20200101'	| '20211231'	|| ['20200419', '20200426', '20200503', '20210411', '20210418', '20210425']
 		'-46,-7'		| '20200101'	| '20211231'	|| ['20200226', '20200405', '20210217', '20210328']
 	}
-	
+
+	@Unroll
+	def 'verify byeaster recurrence rule with BYDAY: #rule'() {
+		setup: 'parse recurrence rule'
+		def recur = new Recur("FREQ=YEARLY;BYEASTER=$rule;BYDAY=$bydayrule")
+		def startDate = new Date(start)
+		def endDate = new Date(end)
+		def expectedDates = []
+		expected.each {
+			expectedDates << new Date(it)
+		}
+
+		expect:
+		recur.getDates(startDate, endDate, Value.DATE) == expectedDates
+
+		where:
+		rule				| bydayrule	|	start		| end			|| expected
+		'5,6,7,12,13,14'	| 'SU,SA'	|	'20200101'	| '20201231'	|| ['20200418', '20200419', '20200425', '20200426']
+		'-7,0,7'			| 'WE'		|	'20200101'	| '20201231'	|| []
+	}
+		
     @Unroll
     def 'verify byyearday recurrence rules: #rule'() {
         setup: 'parse recurrence rule'

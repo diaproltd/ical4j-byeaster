@@ -439,7 +439,7 @@ public class Recur implements Serializable {
     }
 
     private Frequency deriveFilterType() {
-        if (frequency == Frequency.DAILY || !getYearDayList().isEmpty() || !getMonthDayList().isEmpty()) {
+        if (frequency == Frequency.DAILY || !getYearDayList().isEmpty() || !getMonthDayList().isEmpty() || !getEasterDayList().isEmpty()) {
             return Frequency.DAILY;
         } else if (frequency == Frequency.WEEKLY || !getWeekNoList().isEmpty()) {
             return Frequency.WEEKLY;
@@ -1002,20 +1002,20 @@ public class Recur implements Serializable {
                 log.debug("Dates after BYWEEKNO processing: " + dates);
             }
         }
-
-        if (transformers.get(BYEASTER) != null) {
-        	dates = transformers.get(BYEASTER).transform(dates);
-        	// debugging..
-            if (log.isDebugEnabled()) {
-                log.debug("Dates after BYEASTER processing: " + dates);
-            }
-        }
         
         if (transformers.get(BYYEARDAY) != null) {
             dates = transformers.get(BYYEARDAY).transform(dates);
             // debugging..
             if (log.isDebugEnabled()) {
                 log.debug("Dates after BYYEARDAY processing: " + dates);
+            }
+        }
+        
+        if (transformers.get(BYEASTER) != null) {
+        	dates = transformers.get(BYEASTER).transform(dates);
+        	// debugging..
+            if (log.isDebugEnabled()) {
+                log.debug("Dates after BYEASTER processing: " + dates);
             }
         }
 
