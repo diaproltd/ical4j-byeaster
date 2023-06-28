@@ -970,7 +970,7 @@ public final class PropertyValidator<T extends Property> extends AbstractValidat
      *                   ) ":" date-time
      * </pre>
      */
-    public static final Validator<Trigger> TRIGGER_ABS = new PropertyValidator<>(Property.TRIGGER,
+    public static final Validator<Trigger> TRIGGER_ABS = new PropertyValidator<Trigger>(Property.TRIGGER,
             new ValidationRule<>(One, Parameter.VALUE),
             new ValidationRule<>(None, Parameter.RELATED),
             new ValidationRule<>(None, trigger -> {
@@ -1001,7 +1001,7 @@ public final class PropertyValidator<T extends Property> extends AbstractValidat
      *                   ) ":"  dur-value
      * </pre>
      */
-    public static final Validator<Trigger> TRIGGER_REL = new PropertyValidator<>(Property.TRIGGER,
+    public static final Validator<Trigger> TRIGGER_REL = new PropertyValidator<Trigger>(Property.TRIGGER,
             new ValidationRule<>(OneOrLess, Parameter.VALUE, Parameter.RELATED),
             new ValidationRule<>(None, trigger -> {
                 Value v = trigger.getParameter(VALUE);

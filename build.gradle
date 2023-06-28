@@ -10,22 +10,21 @@ buildscript {
 }
 
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.13.3'
-    id "nebula.provided-base" version "3.0.3"
+	id 'eclipse'
+	id 'java'
+	id 'java-library'
+	id 'groovy'
+	id 'maven-publish'
+	id 'jacoco'
+	id 'signing'
+    id 'pl.allegro.tech.build.axion-release' version '1.13.6'
+    id "nebula.provided-base" version "7.0.0"
+    id "nebula.optional-base" version "7.0.0"
+    id "com.palantir.revapi" version "1.7.0"
     id "net.ltgt.errorprone" version "1.2.1" apply false
     id "biz.aQute.bnd.builder" version "$bndVersion"
 }
 
-apply plugin: 'eclipse'
-apply plugin: 'java'
-apply plugin: 'java-library'
-apply plugin: 'groovy'
-apply plugin: 'maven-publish'
-apply plugin: 'jacoco'
-apply plugin: 'signing'
-apply plugin: 'pl.allegro.tech.build.axion-release'
-apply plugin: 'nebula.optional-base'
-apply plugin: 'com.palantir.revapi'
 apply from: 'gradle/dist.gradle'
 
 sourceCompatibility = 1.8
@@ -65,7 +64,7 @@ dependencies {
 
     compileOnly "biz.aQute.bnd:biz.aQute.bndlib:$bndVersion"
 
-    testCompile "org.codehaus.groovy:groovy:$groovyVersion",
+    testCompileOnly "org.codehaus.groovy:groovy:$groovyVersion",
             "org.slf4j:slf4j-log4j12:$slf4jVersion",
             "org.apache.logging.log4j:log4j:$log4jVersion",
             "org.ccil.cowan.tagsoup:tagsoup:$tagsoupVersion",
